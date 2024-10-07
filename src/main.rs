@@ -57,14 +57,14 @@ fn maximal_matching(graph: &Graph) -> Vec<(usize, usize)> {
             continue;
         }
 
-        let other_node = graph
+        let other_weights: Vec<_> = graph
             .edges_for(id)
             .filter(|e| !seen.contains(&e.0))
-            .min_by_key(|e| e.1);
+            .filter(|e| id != e.0)
+            .collect();
+
+        let other_node = other_weights.iter().min_by_key(|e| e.1);
         if let Some(other_node) = other_node {
-            if id == other_node.0 {
-                continue;
-            }
             if id < other_node.0 {
                 matchings.push((id, other_node.0));
             } else {
@@ -101,24 +101,17 @@ fn main() {
         email: String::new(),
     });
 
+    graph.add_edge(0, 1, 10);
+
     dbg!(graph.nodes());
     dbg!(&graph.edges);
 
-    let matching1 = maximal_matching(&graph);
-    dbg!(&matching1);
-    graph.update_from_matching(&matching1);
-    dbg!(&graph.edges);
-
-    let matching2 = maximal_matching(&graph);
-    dbg!(&matching2);
-    graph.update_from_matching(&matching2);
-    dbg!(&graph.edges);
-
-    let matching3 = maximal_matching(&graph);
-    dbg!(&matching3);
-    graph.update_from_matching(&matching3);
-    dbg!(&graph.edges);
-
-    let matching4 = maximal_matching(&graph);
-    dbg!(&matching4);
+    for _ in 0..20 {
+        let matching1 = maximal_matching(&graph);
+        println!("matching {:?}", matching1);
+        graph.update_from_matching(&matching1);
+        for row in &graph.edges {
+            println!("{:?}", row);
+        }
+    }
 }
