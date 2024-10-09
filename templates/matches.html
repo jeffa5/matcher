@@ -15,7 +15,7 @@
   <table>
     <tr><th>Name</th><th>Email</th><th>Name</th><th>Email</th></tr>
     {% for match in matches %}
-      <tr><td>{{ match.person1.name }}</td><td>{{ match.person1.email }}</td><td>{{ match.person2.name | default(value="") }}</td><td>{{ match.person2.email | default(value="") }}</td></tr>
+    <tr><td><a href="/person/{{ match.person1.id }}">{{ match.person1.name }}</a></td><td>{{ match.person1.email }}</td><td>{% if match.person2.name %}<a href="/person/{{ match.person2.id }}">{{ match.person2.name }}</a>{% endif %}</td><td>{{ match.person2.email | default(value="") }}</td></tr>
     {%- endfor %}
   </table>
 </body>
