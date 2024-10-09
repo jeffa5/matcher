@@ -7,7 +7,7 @@
   <table>
     <tr><th>Name</th><th>Email</th><th>Waiting</th></tr>
     {% for person in people %}
-    <tr><td><a href="/person/{{ person.id }}">{{ person.name }}</a></td><td>{{ person.email }}</td><td>{{ person.waiting }}</td></tr>
+    <tr><td><a href="/person/{{ person.id }}">{{ person.name }}</a></td><td><a href="mailto:{{ person.email }}">{{ person.email }}</a></td><td>{% if person.waiting %}Yes{% else %}No{% endif %}</td></tr>
     {%- endfor %}
   </table>
 

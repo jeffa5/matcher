@@ -23,7 +23,7 @@
   <table>
     <tr><th>Name</th><th>Email</th><th>Name</th><th>Email</th></tr>
     {% for match in matches %}
-    <tr><td><a href="/person/{{ match.person1.id }}">{{ match.person1.name }}</a></td><td>{{ match.person1.email }}</td><td>{% if match.person2.name %}<a href="/person/{{ match.person2.id }}">{{ match.person2.name }}</a>{% endif %}</td><td>{{ match.person2.email | default(value="") }}</td></tr>
+    <tr><td><a href="/person/{{ match.person1.id }}">{{ match.person1.name }}</a></td><td><a href="mailto:{{ match.person1.email }}">{{ match.person1.email }}</a></td><td>{% if match.person2.name %}<a href="/person/{{ match.person2.id }}">{{ match.person2.name }}</a>{% endif %}</td><td>{% if match.person2.email %}<a href="mailto:{{ match.person2.email }}">{{ match.person2.email }}</a>{% endif %}</td></tr>
     {%- endfor %}
   </table>
   {% else %}
