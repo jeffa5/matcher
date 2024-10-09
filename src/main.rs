@@ -1,15 +1,9 @@
-use std::{fs::File, path::PathBuf};
-
 use axum::routing::{get, post};
 use tera::Tera;
 
 mod db;
 mod matching;
 mod web;
-
-struct Storage {
-    path: PathBuf,
-}
 
 #[tokio::main]
 async fn main() {

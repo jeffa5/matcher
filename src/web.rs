@@ -81,7 +81,7 @@ pub async fn matches(State((tera, db)): State<(Tera, Database)>) -> Html<String>
     Html(tera.render("matches.html", &context).unwrap())
 }
 
-pub async fn trigger_matching(State((tera, db)): State<(Tera, Database)>) -> Redirect {
+pub async fn trigger_matching(State((_tera, db)): State<(Tera, Database)>) -> Redirect {
     let mut g = Graph::default();
 
     let mut waiter_index_mapping = HashMap::new();

@@ -26,23 +26,8 @@ impl Graph {
         self.nodes.iter().collect()
     }
 
-    pub fn node(&self, id: usize) -> &u32 {
-        &self.nodes[id]
-    }
-
-    pub fn edge(&self, id1: usize, id2: usize) -> u32 {
-        self.edges[id1][id2]
-    }
-
     pub fn edges_for(&self, id: usize) -> impl Iterator<Item = (usize, u32)> + '_ {
         self.edges[id].iter().enumerate().map(|(b, w)| (b, *w))
-    }
-
-    pub fn update_from_matching(&mut self, matching: &Vec<(usize, usize)>) {
-        for (a, b) in matching {
-            self.edges[*a][*b] += 1;
-            self.edges[*b][*a] += 1;
-        }
     }
 
     pub fn matching(&self) -> Vec<(usize, Option<usize>)> {
