@@ -74,9 +74,12 @@ pub async fn all_people(State((tera, db)): State<(Tera, Database)>) -> Html<Stri
 
 pub async fn matches(State((tera, db)): State<(Tera, Database)>) -> Html<String> {
     let mut context = Context::new();
-    let match_generation = db.latest_generation();
+    println!("matches");
+    let match_meta = db.latest_match_meta();
+    println!("match meta {:?}", match_meta);
     let matches = db.latest_matches();
-    context.insert("match_generation", &match_generation);
+    println!("matches {:?}", matches);
+    context.insert("match_meta", &match_meta);
     context.insert("matches", &matches);
     Html(tera.render("matches.html", &context).unwrap())
 }

@@ -12,11 +12,17 @@
 
   <h2>Current matches</h2>
 
-  {% if match_generation %}
-  Generation: {{ match_generation }}
+  {% if match_meta %}
+  Generation {{ match_meta.generation }} generated at {{ match_meta.time | date(format="%Y-%m-%d %H:%M") }}
   {% else %}
   No matchings have happened yet
   {% endif %}
+
+  <br>
+
+  {% if matches %}
+
+  <br>
 
   <table>
     <tr><th>Name</th><th>Email</th><th>Name</th><th>Email</th></tr>
@@ -24,5 +30,8 @@
     <tr><td><a href="/person/{{ match.person1.id }}">{{ match.person1.name }}</a></td><td>{{ match.person1.email }}</td><td>{% if match.person2.name %}<a href="/person/{{ match.person2.id }}">{{ match.person2.name }}</a>{% endif %}</td><td>{{ match.person2.email | default(value="") }}</td></tr>
     {%- endfor %}
   </table>
+  {% else %}
+  No matches happened this round
+  {% endif %}
 </body>
 </html>

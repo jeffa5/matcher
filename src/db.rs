@@ -20,6 +20,12 @@ pub struct Match {
     pub person2: Option<Person>,
 }
 
+#[derive(Debug, Clone, Hash, PartialEq, Eq, Serialize, Deserialize)]
+pub struct MatchMeta {
+    pub generation: u32,
+    pub time: u64,
+}
+
 const CREATE_TABLE_PEOPLE: &str = "CREATE TABLE IF NOT EXISTS people (
     id integer primary key,
     email text not null unique,
@@ -38,7 +44,7 @@ const CREATE_TABLE_MATCHES: &str = "CREATE TABLE IF NOT EXISTS matches (
 
 const CREATE_TABLE_GENERATIONS: &str = "CREATE TABLE IF NOT EXISTS generations (
     id integer primary key,
-    time text
+    time integer
 )";
 
 const CREATE_TABLE_EDGES: &str = "CREATE TABLE IF NOT EXISTS edges (
@@ -138,7 +144,7 @@ impl Database {
             .unwrap();
     }
 
-    pub fn matches_for(&self, person_id: u32) -> Vec<(u32, Person)>{
+    pub fn matches_for(&self, person_id: u32) -> Vec<(u32, Person)> {
         let conn = self.connection.lock().unwrap();
         let mut stmnt = conn
             .prepare("select m.generation, p.id, p.name from matches m join people p on m.person2 = p.id WHERE m.person1 = ?1")
@@ -147,12 +153,15 @@ impl Database {
 
         let mut people = Vec::new();
         while let Some(row) = rows.next().unwrap() {
-            people.push((row.get(0).unwrap(), Person {
-                id: row.get(1).unwrap(),
-                email: "".to_owned(),
-                name: row.get(2).unwrap(),
-                waiting: false,
-            }));
+            people.push((
+                row.get(0).unwrap(),
+                Person {
+                    id: row.get(1).unwrap(),
+                    email: "".to_owned(),
+                    name: row.get(2).unwrap(),
+                    waiting: false,
+                },
+            ));
         }
 
         let mut stmnt = conn
@@ -161,12 +170,15 @@ impl Database {
         let mut rows = stmnt.query([person_id]).unwrap();
 
         while let Some(row) = rows.next().unwrap() {
-            people.push((row.get(0).unwrap(), Person {
-                id: row.get(1).unwrap(),
-                email: "".to_owned(),
-                name: row.get(2).unwrap(),
-                waiting: false,
-            }));
+            people.push((
+                row.get(0).unwrap(),
+                Person {
+                    id: row.get(1).unwrap(),
+                    email: "".to_owned(),
+                    name: row.get(2).unwrap(),
+                    waiting: false,
+                },
+            ));
         }
 
         people
@@ -191,26 +203,28 @@ impl Database {
         people
     }
 
-    pub fn latest_generation(&self) -> Option<u64> {
+    pub fn latest_match_meta(&self) -> Option<MatchMeta> {
         self.connection
             .lock()
             .unwrap()
-            .query_row("select max(id) from generations", [], |r| {
-                let i: u64 = r.get(0)?;
-                Ok(i)
+            .query_row("select max(id), time from generations", [], |r| {
+                Ok(MatchMeta {
+                    generation: r.get(0)?,
+                    time: r.get(1)?,
+                })
             })
             .ok()
     }
 
     pub fn latest_matches(&self) -> Vec<Match> {
-        let Some(latest_generation) = self.latest_generation() else {
+        let Some(latest_match_meta) = self.latest_match_meta() else {
             return Vec::new();
         };
         let conn = self.connection.lock().unwrap();
         let mut stmt = conn
             .prepare("select p1.id, p1.email, p1.name, p1.waiting, p2.id, p2.email, p2.name, p2.waiting from matches m join people p1 on m.person1 = p1.id join people p2 on m.person2 = p2.id where m.generation = ?1")
             .unwrap();
-        let mut rows = stmt.query([latest_generation]).unwrap();
+        let mut rows = stmt.query([latest_match_meta.generation]).unwrap();
         let mut matches = Vec::new();
         while let Some(row) = rows.next().unwrap() {
             matches.push(Match {
@@ -231,7 +245,7 @@ impl Database {
         let mut stmt = conn
             .prepare("select p1.id, p1.email, p1.name, p1.waiting from matches m join people p1 on m.person1 = p1.id where m.generation = ?1 AND m.person2 IS NULL")
             .unwrap();
-        let mut rows = stmt.query([latest_generation]).unwrap();
+        let mut rows = stmt.query([latest_match_meta.generation]).unwrap();
         while let Some(row) = rows.next().unwrap() {
             matches.push(Match {
                 person1: Person {
@@ -274,7 +288,7 @@ impl Database {
     }
 
     pub fn add_matching_generation(&self) -> u32 {
-        let time = "now";
+        let time = chrono::offset::Utc::now().timestamp();
         self.connection
             .lock()
             .unwrap()
