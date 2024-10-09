@@ -195,7 +195,7 @@ impl Database {
         self.connection
             .lock()
             .unwrap()
-            .query_row("select max(generation) from matches", [], |r| {
+            .query_row("select max(id) from generations", [], |r| {
                 let i: u64 = r.get(0)?;
                 Ok(i)
             })

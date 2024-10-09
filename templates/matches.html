@@ -12,6 +12,12 @@
 
   <h2>Current matches</h2>
 
+  {% if match_generation %}
+  Generation: {{ match_generation }}
+  {% else %}
+  No matchings have happened yet
+  {% endif %}
+
   <table>
     <tr><th>Name</th><th>Email</th><th>Name</th><th>Email</th></tr>
     {% for match in matches %}
