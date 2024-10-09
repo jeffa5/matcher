@@ -2,10 +2,6 @@
 <body>
   {% include "header.html" %}
 
-  <form method="post">
-    <button type="submit">Trigger New Matching</button>
-  </form>
-
   <h2>Current matches</h2>
 
   {% if match_meta %} Generation {{ match_meta.generation }} generated at {{

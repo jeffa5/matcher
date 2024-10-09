@@ -1,5 +1,6 @@
-use axum::routing::get;
+use axum::routing::{get, post};
 use tera::Tera;
+use tokio::join;
 
 use crate::web::AppState;
 
@@ -23,10 +24,20 @@ async fn main() {
             get(web::view_person).post(web::add_waiter),
         )
         .route("/people", get(web::all_people))
-        .route("/matches", get(web::matches).post(web::trigger_matching))
+        .route("/matches", get(web::matches))
         .route("/matches/:generation", get(web::matches_generation))
+        .with_state(state.clone());
+
+    let ops_app = axum::Router::new()
+        .route("/matches", post(web::trigger_matching))
         .with_state(state);
     let listener = tokio::net::TcpListener::bind("0.0.0.0:3000").await.unwrap();
-    println!("Serving on http://0.0.0.0:3000");
-    axum::serve(listener, app).await.unwrap();
+    let ops_listener = tokio::net::TcpListener::bind("0.0.0.0:3001").await.unwrap();
+    println!("Serving public on http://0.0.0.0:3000");
+    println!("Serving private on http://0.0.0.0:3001");
+    let public = axum::serve(listener, app);
+    let private = axum::serve(ops_listener, ops_app);
+    let (a, b) = join![public, private];
+    a.unwrap();
+    b.unwrap();
 }
