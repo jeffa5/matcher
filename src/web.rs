@@ -50,11 +50,15 @@ pub async fn view_person(
     Path(person_id): Path<u32>,
 ) -> Response {
     if let Some(user) = db.get_person(person_id) {
+        let mut matches = db.matches_for(person_id);
+        matches.sort_by_key(|m| m.0);
+        matches.reverse();
         let mut context = Context::new();
         context.insert("id", &user.id);
         context.insert("name", &user.name);
         context.insert("email", &user.email);
         context.insert("waiting", &user.waiting);
+        context.insert("matches", &matches);
         Html(tera.render("person.html", &context).unwrap()).into_response()
     } else {
         Redirect::to("/person").into_response()

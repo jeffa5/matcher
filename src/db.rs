@@ -138,8 +138,38 @@ impl Database {
             .unwrap();
     }
 
-    pub fn matches_for(&self, person_id: u32) {
-        todo!()
+    pub fn matches_for(&self, person_id: u32) -> Vec<(u32, Person)>{
+        let conn = self.connection.lock().unwrap();
+        let mut stmnt = conn
+            .prepare("select m.generation, p.id, p.name from matches m join people p on m.person2 = p.id WHERE m.person1 = ?1")
+            .unwrap();
+        let mut rows = stmnt.query([person_id]).unwrap();
+
+        let mut people = Vec::new();
+        while let Some(row) = rows.next().unwrap() {
+            people.push((row.get(0).unwrap(), Person {
+                id: row.get(1).unwrap(),
+                email: "".to_owned(),
+                name: row.get(2).unwrap(),
+                waiting: false,
+            }));
+        }
+
+        let mut stmnt = conn
+            .prepare("select m.generation, p.id, p.name from matches m join people p on m.person1 = p.id WHERE m.person2 = ?1")
+            .unwrap();
+        let mut rows = stmnt.query([person_id]).unwrap();
+
+        while let Some(row) = rows.next().unwrap() {
+            people.push((row.get(0).unwrap(), Person {
+                id: row.get(1).unwrap(),
+                email: "".to_owned(),
+                name: row.get(2).unwrap(),
+                waiting: false,
+            }));
+        }
+
+        people
     }
 
     pub fn all_people(&self) -> Vec<Person> {

@@ -17,6 +17,11 @@
 
   <h2>Match history</h2>
 
-  TODO
+  <ul>
+    {% for match in matches %}
+    <li>{{ match.0 }}: <a href="/person/{{ match.1.id }}">{{ match.1.name }}</a></li>
+    {% endfor %}
+  </ul>
+
 </body>
 </html>
