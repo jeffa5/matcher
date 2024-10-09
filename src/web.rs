@@ -85,6 +85,18 @@ pub async fn matches(State(state): State<AppState>) -> Html<String> {
     Html(state.tera.render("matches.html", &context).unwrap())
 }
 
+pub async fn matches_generation(
+    State(state): State<AppState>,
+    Path(generation): Path<u32>,
+) -> Html<String> {
+    let mut context = Context::new();
+    let match_meta = state.db.match_meta_at(generation);
+    let matches = state.db.matches_at(generation);
+    context.insert("match_meta", &match_meta);
+    context.insert("matches", &matches);
+    Html(state.tera.render("matches.html", &context).unwrap())
+}
+
 pub async fn trigger_matching(State(state): State<AppState>) -> Redirect {
     let mut g = Graph::default();
 

@@ -1,4 +1,4 @@
-use axum::routing::{get, post};
+use axum::routing::get;
 use tera::Tera;
 
 use crate::web::AppState;
@@ -23,8 +23,8 @@ async fn main() {
             get(web::view_person).post(web::add_waiter),
         )
         .route("/people", get(web::all_people))
-        .route("/matches", get(web::matches))
-        .route("/matches", post(web::trigger_matching))
+        .route("/matches", get(web::matches).post(web::trigger_matching))
+        .route("/matches/:generation", get(web::matches_generation))
         .with_state(state);
     let listener = tokio::net::TcpListener::bind("0.0.0.0:3000").await.unwrap();
     println!("Serving on http://0.0.0.0:3000");

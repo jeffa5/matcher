@@ -203,6 +203,23 @@ impl Database {
         people
     }
 
+    pub fn match_meta_at(&self, generation: u32) -> Option<MatchMeta> {
+        self.connection
+            .lock()
+            .unwrap()
+            .query_row(
+                "select id, time from generations where id = ?1",
+                [generation],
+                |r| {
+                    Ok(MatchMeta {
+                        generation: r.get(0)?,
+                        time: r.get(1)?,
+                    })
+                },
+            )
+            .ok()
+    }
+
     pub fn latest_match_meta(&self) -> Option<MatchMeta> {
         self.connection
             .lock()
@@ -214,6 +231,47 @@ impl Database {
                 })
             })
             .ok()
+    }
+
+    pub fn matches_at(&self, generation: u32) -> Vec<Match> {
+        let conn = self.connection.lock().unwrap();
+        let mut stmt = conn
+            .prepare("select p1.id, p1.email, p1.name, p1.waiting, p2.id, p2.email, p2.name, p2.waiting from matches m join people p1 on m.person1 = p1.id join people p2 on m.person2 = p2.id where m.generation = ?1")
+            .unwrap();
+        let mut rows = stmt.query([generation]).unwrap();
+        let mut matches = Vec::new();
+        while let Some(row) = rows.next().unwrap() {
+            matches.push(Match {
+                person1: Person {
+                    id: row.get(0).unwrap(),
+                    email: row.get(1).unwrap(),
+                    name: row.get(2).unwrap(),
+                    waiting: row.get(3).unwrap(),
+                },
+                person2: Some(Person {
+                    id: row.get(4).unwrap(),
+                    email: row.get(5).unwrap(),
+                    name: row.get(6).unwrap(),
+                    waiting: row.get(7).unwrap(),
+                }),
+            })
+        }
+        let mut stmt = conn
+            .prepare("select p1.id, p1.email, p1.name, p1.waiting from matches m join people p1 on m.person1 = p1.id where m.generation = ?1 AND m.person2 IS NULL")
+            .unwrap();
+        let mut rows = stmt.query([generation]).unwrap();
+        while let Some(row) = rows.next().unwrap() {
+            matches.push(Match {
+                person1: Person {
+                    id: row.get(0).unwrap(),
+                    email: row.get(1).unwrap(),
+                    name: row.get(2).unwrap(),
+                    waiting: row.get(3).unwrap(),
+                },
+                person2: None,
+            })
+        }
+        matches
     }
 
     pub fn latest_matches(&self) -> Vec<Match> {
