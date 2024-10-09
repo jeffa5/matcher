@@ -103,6 +103,10 @@ pub async fn trigger_matching(State(state): State<AppState>) -> Redirect {
     let mut waiter_index_mapping = HashMap::new();
     let mut index_waiter_mapping = HashMap::new();
     let waiters = state.db.waiters();
+    if waiters.is_empty() {
+        return Redirect::to("/matches");
+    }
+
     for waiter in &waiters {
         let index = g.add_node(*waiter);
         waiter_index_mapping.insert(*waiter, index);
