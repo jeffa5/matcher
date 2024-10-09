@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Matcher</title>
+</head>
+<body>
+  <a href="/"><h1>Matcher</h1></a>
+  <h2>Person {{ name }}</h2>
+
+  Email: {{ email }}
+  <br/>
+  Waiting for matching: {{ waiting }}
+
+  <form action="/person/{{ id }}" method="post">
+    <button type="submit">Join matching</button>
+  </form>
+
+  <h2>Match history</h2>
+
+  TODO
+</body>
+</html>

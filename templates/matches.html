@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Matcher</title>
+</head>
+<body>
+  <a href="/"><h1>Matcher</h1></a>
+
+  <form method="post">
+    <button type="submit">Trigger New Matching</button>
+  </form>
+
+  <h2>Current matches</h2>
+
+  <table>
+    <tr><th>Name</th><th>Email</th><th>Name</th><th>Email</th></tr>
+    {% for match in matches %}
+      <tr><td>{{ match.person1.name }}</td><td>{{ match.person1.email }}</td><td>{{ match.person2.name | default(value="") }}</td><td>{{ match.person2.email | default(value="") }}</td></tr>
+    {%- endfor %}
+  </table>
+</body>
+</html>

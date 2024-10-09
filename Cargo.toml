@@ -4,5 +4,9 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
+axum = { version = "0.7.7", features = ["form"] }
+rusqlite = "0.32.1"
 serde = { version = "1.0.210", features = ["derive"] }
 serde_json = "1.0.128"
+tera = "1.20.0"
+tokio = { version = "1.40.0", features = ["rt-multi-thread"] }

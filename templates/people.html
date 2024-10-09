@@ -1,0 +1,18 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Matcher</title>
+</head>
+<body>
+  <a href="/"><h1>Matcher</h1></a>
+  <h2>People</h2>
+
+  <table>
+    <tr><th>Name</th><th>Email</th><th>Waiting</th></tr>
+    {% for person in people %}
+    <tr><td><a href="/person/{{ person.id }}">{{ person.name }}</a></td><td>{{ person.email }}</td><td>{{ person.waiting }}</td></tr>
+    {%- endfor %}
+  </table>
+
+</body>
+</html>
