@@ -74,25 +74,19 @@ pub async fn all_people(State((tera, db)): State<(Tera, Database)>) -> Html<Stri
 
 pub async fn matches(State((tera, db)): State<(Tera, Database)>) -> Html<String> {
     let mut context = Context::new();
-    println!("matches");
     let match_meta = db.latest_match_meta();
-    println!("match meta {:?}", match_meta);
     let matches = db.latest_matches();
-    println!("matches {:?}", matches);
     context.insert("match_meta", &match_meta);
     context.insert("matches", &matches);
     Html(tera.render("matches.html", &context).unwrap())
 }
 
 pub async fn trigger_matching(State((tera, db)): State<(Tera, Database)>) -> Redirect {
-    println!("Start matching");
-
     let mut g = Graph::default();
 
     let mut waiter_index_mapping = HashMap::new();
     let mut index_waiter_mapping = HashMap::new();
     let waiters = db.waiters();
-    dbg!(&waiters);
     for waiter in &waiters {
         let index = g.add_node(*waiter);
         waiter_index_mapping.insert(*waiter, index);
@@ -100,7 +94,6 @@ pub async fn trigger_matching(State((tera, db)): State<(Tera, Database)>) -> Red
     }
 
     let edges = db.edges_for(waiters);
-    dbg!(&edges);
     for (id1, id2, weight) in edges {
         g.add_edge(
             waiter_index_mapping[&id1],
@@ -108,13 +101,10 @@ pub async fn trigger_matching(State((tera, db)): State<(Tera, Database)>) -> Red
             weight,
         )
     }
-    dbg!(&g);
 
     let matching = g.matching();
-    dbg!(&matching);
 
     let generation = db.add_matching_generation();
-    dbg!(generation);
 
     for (p1, p2) in matching {
         db.add_matching(

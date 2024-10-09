@@ -331,4 +331,3 @@ impl Database {
         edges
     }
 }
-
