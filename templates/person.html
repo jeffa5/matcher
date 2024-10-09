@@ -5,11 +5,13 @@
   <h2>{{ name }}</h2>
 
   Email: <a href="mailto:{{ email }}">{{ email }}</a>
-  <br/>
+  <br />
   Waiting for matching: {% if waiting %}Yes{% else %}No{% endif %}
 
   <form action="/person/{{ id }}" method="post">
-    <button type="submit" {% if waiting %}disabled{% endif %}>Join matching</button>
+    <button type="submit" {% if waiting %}disabled{% endif %}>
+      Join matching
+    </button>
   </form>
 
   <h2>Match history</h2>
@@ -17,12 +19,12 @@
   {% if matches %}
   <ul>
     {% for match in matches %}
-    <li><a href="/matches/{{ match.0 }}">{{ match.0 }}</a>: <a href="/person/{{ match.1.id }}">{{ match.1.name }}</a></li>
+    <li>
+      <a href="/matches/{{ match.0 }}">{{ match.0 }}</a>:
+      <a href="/person/{{ match.1.id }}">{{ match.1.name }}</a>
+    </li>
     {% endfor %}
   </ul>
-  {% else %}
-  No matches yet.
-  {% endif %}
-
+  {% else %} No matches yet. {% endif %}
 </body>
-</html>
+{% include "foot.html" %}

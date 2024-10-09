@@ -8,26 +8,44 @@
 
   <h2>Current matches</h2>
 
-  {% if match_meta %}
-  Generation {{ match_meta.generation }} generated at {{ match_meta.time | date(format="%Y-%m-%d %H:%M") }}
-  {% else %}
-  No matchings have happened yet
-  {% endif %}
+  {% if match_meta %} Generation {{ match_meta.generation }} generated at {{
+  match_meta.time | date(format="%Y-%m-%d %H:%M") }} {% else %} No matchings
+  have happened yet {% endif %}
 
-  <br>
+  <br />
 
   {% if matches %}
 
-  <br>
+  <br />
 
   <table>
-    <tr><th>Name</th><th>Email</th><th>Name</th><th>Email</th></tr>
+    <tr>
+      <th>Name</th>
+      <th>Email</th>
+      <th>Name</th>
+      <th>Email</th>
+    </tr>
     {% for match in matches %}
-    <tr><td><a href="/person/{{ match.person1.id }}">{{ match.person1.name }}</a></td><td><a href="mailto:{{ match.person1.email }}">{{ match.person1.email }}</a></td><td>{% if match.person2.name %}<a href="/person/{{ match.person2.id }}">{{ match.person2.name }}</a>{% endif %}</td><td>{% if match.person2.email %}<a href="mailto:{{ match.person2.email }}">{{ match.person2.email }}</a>{% endif %}</td></tr>
+    <tr>
+      <td>
+        <a href="/person/{{ match.person1.id }}">{{ match.person1.name }}</a>
+      </td>
+      <td>
+        <a href="mailto:{{ match.person1.email }}">{{ match.person1.email }}</a>
+      </td>
+      <td>
+        {% if match.person2.name %}<a href="/person/{{ match.person2.id }}"
+          >{{ match.person2.name }}</a
+        >{% endif %}
+      </td>
+      <td>
+        {% if match.person2.email %}<a href="mailto:{{ match.person2.email }}"
+          >{{ match.person2.email }}</a
+        >{% endif %}
+      </td>
+    </tr>
     {%- endfor %}
   </table>
-  {% else %}
-  No matches happened this round
-  {% endif %}
+  {% else %} No matches happened this round {% endif %}
 </body>
-</html>
+{% include "foot.html" %}
