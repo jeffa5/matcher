@@ -17,7 +17,7 @@
   {% if matches %}
   <ul>
     {% for match in matches %}
-    <li>{{ match.0 }}: <a href="/person/{{ match.1.id }}">{{ match.1.name }}</a></li>
+    <li><a href="/matches/{{ match.0 }}">{{ match.0 }}</a>: <a href="/person/{{ match.1.id }}">{{ match.1.name }}</a></li>
     {% endfor %}
   </ul>
   {% else %}
