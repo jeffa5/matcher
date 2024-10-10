@@ -9,8 +9,8 @@
   Waiting for matching: {% if waiting %}Yes{% else %}No{% endif %}
 
   <form action="/person/{{ id }}" method="post">
-    <button type="submit" {% if waiting %}disabled{% endif %}>
-      Join matching
+    <button type="submit">
+      {% if waiting %}Leave{% else %}Join{% endif %} matching
     </button>
   </form>
 

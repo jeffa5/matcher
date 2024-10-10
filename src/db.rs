@@ -133,12 +133,12 @@ impl Database {
             .unwrap();
     }
 
-    pub fn add_waiter(&self, person_id: u32) {
+    pub fn toggle_waiter(&self, person_id: u32) {
         self.connection
             .lock()
             .unwrap()
             .execute(
-                "UPDATE people SET waiting = TRUE WHERE id = ?1",
+                "UPDATE people SET waiting = (CASE WHEN waiting = FALSE THEN TRUE ELSE FALSE END) WHERE id = ?1",
                 [person_id],
             )
             .unwrap();

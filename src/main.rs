@@ -21,7 +21,7 @@ async fn main() {
         .route("/person", get(web::new_person).post(web::find_person))
         .route(
             "/person/:person_id",
-            get(web::view_person).post(web::add_waiter),
+            get(web::view_person).post(web::toggle_waiter),
         )
         .route("/people", get(web::all_people))
         .route("/matches", get(web::matches))

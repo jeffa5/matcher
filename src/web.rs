@@ -137,7 +137,7 @@ pub async fn trigger_matching(State(state): State<AppState>) -> Redirect {
     Redirect::to("/matches")
 }
 
-pub async fn add_waiter(State(state): State<AppState>, Path(person_id): Path<u32>) -> Redirect {
-    state.db.add_waiter(person_id);
+pub async fn toggle_waiter(State(state): State<AppState>, Path(person_id): Path<u32>) -> Redirect {
+    state.db.toggle_waiter(person_id);
     Redirect::to(&format!("/person/{}", person_id))
 }
