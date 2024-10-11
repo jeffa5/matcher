@@ -6,7 +6,7 @@ use axum::{
     response::{AppendHeaders, Html, IntoResponse, Redirect, Response},
     Form,
 };
-use axum_extra::extract::CookieJar;
+use axum_extra::extract::{cookie::Cookie, CookieJar};
 use serde::Deserialize;
 use tera::{Context, Tera};
 
@@ -14,6 +14,10 @@ use crate::{
     db::{Database, SignInError},
     matching::Graph,
 };
+
+pub fn session_id_cookie(session_id: &str) -> String {
+    Cookie::new("session_id", session_id).to_string()
+}
 
 // An extractor that performs authorization.
 pub struct Authorized {
@@ -44,7 +48,7 @@ where
                 person_id,
             }),
             _ => Err((
-                AppendHeaders([(SET_COOKIE, "session_id=")]),
+                AppendHeaders([(SET_COOKIE, session_id_cookie(""))]),
                 fallback().await,
             )
                 .into_response()),
@@ -85,7 +89,7 @@ pub async fn do_sign_in(State(state): State<AppState>, Form(user): Form<SignIn>)
     let password_hash = user.password;
     match state.db.sign_in_session(&user.email, &password_hash) {
         Ok(session_id) => {
-            let headers = AppendHeaders([(SET_COOKIE, format!("session_id={}", session_id))]);
+            let headers = AppendHeaders([(SET_COOKIE, session_id_cookie(&session_id))]);
             (headers, Redirect::to("/")).into_response()
         }
         Err(SignInError::UnknownUser) => Redirect::to("/sign_up").into_response(),
@@ -112,7 +116,7 @@ pub async fn do_sign_up(State(state): State<AppState>, Form(sign_up): Form<SignU
             .db
             .sign_up_session(&sign_up.name, &sign_up.email, &password_hash);
     (
-        AppendHeaders([(SET_COOKIE, format!("session_id={}", session_id))]),
+        AppendHeaders([(SET_COOKIE, session_id_cookie(&session_id))]),
         Redirect::to(&format!("/person/{}", user_id)),
     )
         .into_response()
