@@ -35,11 +35,22 @@ where
 
     async fn from_request_parts(parts: &mut Parts, state: &S) -> Result<Self, Self::Rejection> {
         let cookies = CookieJar::from_request_parts(parts, state).await.unwrap();
-        let Some(session_id) = cookies.get("session_id").map(|c| c.value().to_owned()) else {
-            return Err(fallback().await.into_response());
-        };
 
         let state = AppState::from_ref(state);
+
+        let Some(session_id) = cookies.get("session_id").and_then(|c| {
+            let v = c.value();
+            if v.is_empty() {
+                None
+            } else {
+                Some(v.to_owned())
+            }
+        }) else {
+            let mut context = Context::default();
+            context.insert("error", "It seems like you aren't signed in. Please either sign up to this Matcher, or sign in.");
+            let error_page = Html(state.tera.render("error.html", &context).unwrap());
+            return Err(error_page.into_response());
+        };
 
         let now = chrono::offset::Utc::now().timestamp();
         match state.db.get_session(&session_id, now) {
@@ -47,11 +58,19 @@ where
                 session_id,
                 person_id,
             }),
-            _ => Err((
-                AppendHeaders([(SET_COOKIE, session_id_cookie(""))]),
-                fallback().await,
-            )
-                .into_response()),
+            _ => {
+                let mut context = Context::default();
+                context.insert(
+                    "error",
+                    "Failed to find your session, please try logging in again.",
+                );
+                let error_page = Html(state.tera.render("error.html", &context).unwrap());
+                return Err((
+                    AppendHeaders([(SET_COOKIE, session_id_cookie(""))]),
+                    error_page.into_response(),
+                )
+                    .into_response());
+            }
         }
     }
 }
