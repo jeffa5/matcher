@@ -1,7 +1,7 @@
 use std::collections::HashMap;
 
 use axum::{
-    extract::{FromRef, FromRequestParts, Path, State},
+    extract::{FromRef, FromRequestParts, Path, Query, State},
     http::{header::SET_COOKIE, request::Parts},
     response::{AppendHeaders, Html, IntoResponse, Redirect, Response},
     Form,
@@ -111,8 +111,18 @@ pub async fn do_sign_in(State(state): State<AppState>, Form(user): Form<SignIn>)
             let headers = AppendHeaders([(SET_COOKIE, session_id_cookie(&session_id))]);
             (headers, Redirect::to("/")).into_response()
         }
-        Err(SignInError::UnknownUser) => Redirect::to("/sign_up").into_response(),
-        Err(SignInError::InvalidPassword) => Redirect::to("/sign_in").into_response(),
+        Err(SignInError::UnknownUser) => {
+            Redirect::to(&format!("/sign_up?email={}", user.email)).into_response()
+        }
+        Err(SignInError::InvalidPassword) => {
+            let mut context = Context::default();
+            context.insert(
+                "error",
+                "Failed to sign you in, please check your password.",
+            );
+            let error_page = Html(state.tera.render("sign_in.html", &context).unwrap());
+            error_page.into_response()
+        }
     }
 }
 
@@ -141,13 +151,18 @@ pub async fn do_sign_up(State(state): State<AppState>, Form(sign_up): Form<SignU
         .into_response()
 }
 
-pub async fn sign_up(State(state): State<AppState>) -> Html<String> {
-    Html(
-        state
-            .tera
-            .render("sign_up.html", &Context::default())
-            .unwrap(),
-    )
+#[derive(Debug, Deserialize)]
+pub struct SignUpQuery {
+    email: Option<String>,
+}
+
+pub async fn sign_up(
+    State(state): State<AppState>,
+    Query(sign_up_query): Query<SignUpQuery>,
+) -> Html<String> {
+    let mut context = Context::default();
+    context.insert("email", &sign_up_query.email);
+    Html(state.tera.render("sign_up.html", &context).unwrap())
 }
 
 pub async fn view_person(

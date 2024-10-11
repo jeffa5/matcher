@@ -2,6 +2,10 @@
 <body>
   {% include "header.html" %}
 
+  {% if error %}
+  <div class="error">{{ error }}</div>
+  {% endif %}
+
   <h2>Sign in</h2>
 
   <form action="/sign_in" method="post">
