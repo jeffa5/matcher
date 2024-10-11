@@ -27,6 +27,7 @@ async fn main() {
         .route("/matches/:generation", get(web::matches_generation))
         .route("/sign_in", get(web::sign_in).post(web::do_sign_in))
         .route("/sign_up", get(web::sign_up).post(web::do_sign_up))
+        .route("/sign_out", get(web::sign_out))
         .fallback(web::fallback)
         .with_state(state.clone());
 

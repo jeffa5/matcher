@@ -27,12 +27,12 @@ where
     AppState: FromRef<S>,
     S: Send + Sync,
 {
-    type Rejection = Redirect;
+    type Rejection = Response;
 
     async fn from_request_parts(parts: &mut Parts, state: &S) -> Result<Self, Self::Rejection> {
         let cookies = CookieJar::from_request_parts(parts, state).await.unwrap();
         let Some(session_id) = cookies.get("session_id").map(|c| c.value().to_owned()) else {
-            return Err(fallback().await);
+            return Err(fallback().await.into_response());
         };
 
         let state = AppState::from_ref(state);
@@ -43,7 +43,11 @@ where
                 session_id,
                 person_id,
             }),
-            _ => Err(fallback().await),
+            _ => Err((
+                AppendHeaders([(SET_COOKIE, "session_id=")]),
+                fallback().await,
+            )
+                .into_response()),
         }
     }
 }
@@ -87,6 +91,11 @@ pub async fn do_sign_in(State(state): State<AppState>, Form(user): Form<SignIn>)
         Err(SignInError::UnknownUser) => Redirect::to("/sign_up").into_response(),
         Err(SignInError::InvalidPassword) => Redirect::to("/sign_in").into_response(),
     }
+}
+
+pub async fn sign_out(State(state): State<AppState>, authorized: Authorized) -> Redirect {
+    state.db.sign_out_session(&authorized.session_id);
+    Redirect::to("/")
 }
 
 #[derive(Debug, Deserialize)]

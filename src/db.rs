@@ -412,7 +412,7 @@ impl Database {
                 [session_id],
                 |row| Ok((row.get(0).unwrap(), row.get::<_, i64>(1).unwrap())),
             )
-            .unwrap();
+            .ok()?;
         let week_seconds = 60 * 60 * 24 * 7;
         if last_seen - now > week_seconds {
             conn.execute("DELETE FROM sessions WHERE id = ?1", [session_id])
@@ -452,5 +452,11 @@ impl Database {
             params![session_id, email, time],
         ).unwrap();
         Ok(session_id)
+    }
+
+    pub fn sign_out_session(&self, session_id: &str) {
+        let conn = self.connection.lock().unwrap();
+        conn.execute("DELETE FROM sessions WHERE id = ?1", [session_id])
+            .unwrap();
     }
 }
