@@ -2,7 +2,7 @@
 <body>
   {% include "header.html" %}
 
-  <h2>{{ name }}</h2>
+  <h2>{{ name }} {% if id == authorized_person_id %} (You!) {% endif %}</h2>
 
   Email: <a href="mailto:{{ email }}">{{ email }}</a>
   <br />

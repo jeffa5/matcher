@@ -4,6 +4,7 @@
   <a href="/people">People</a>
 
   {% if authorized_person_id %}
+  <a href="/person/{{ authorized_person_id }}">You</a>
   <a href="/sign_out">Sign out</a>
   {% else %}
   <a href="/sign_in">Sign in</a>
