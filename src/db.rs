@@ -6,6 +6,11 @@ use std::{
 use rusqlite::{params, Connection};
 use serde::{Deserialize, Serialize};
 
+pub enum SignInError {
+    UnknownUser,
+    InvalidPassword,
+}
+
 #[derive(Debug, Clone, Hash, PartialEq, Eq, Serialize, Deserialize)]
 pub struct Person {
     pub id: u32,
@@ -51,7 +56,22 @@ const CREATE_TABLE_EDGES: &str = "CREATE TABLE IF NOT EXISTS edges (
     person1 integer not null,
     person2 integer not null,
     weight integer not null,
-    primary key(person1, person2)
+    primary key(person1, person2),
+    foreign key(person1) references people(id),
+    foreign key(person2) references people(id)
+)";
+
+const CREATE_TABLE_AUTH: &str = "CREATE TABLE IF NOT EXISTS auth (
+    person INTEGER NOT NULL UNIQUE,
+    password_hash TEXT NOT NULL,
+    FOREIGN KEY(person) REFERENCES people(id)
+)";
+
+const CREATE_TABLE_SESSIONS: &str = "CREATE TABLE IF NOT EXISTS sessions (
+    id TEXT PRIMARY KEY,
+    person INTEGER NOT NULL UNIQUE,
+    last_seen INTEGER NOT NULL,
+    FOREIGN KEY(person) REFERENCES people(id)
 )";
 
 #[derive(Clone)]
@@ -76,30 +96,12 @@ impl Database {
             CREATE_TABLE_GENERATIONS,
             CREATE_TABLE_MATCHES,
             CREATE_TABLE_EDGES,
+            CREATE_TABLE_AUTH,
+            CREATE_TABLE_SESSIONS,
         ];
         for creation in creations {
             conn.execute(creation, []).unwrap();
         }
-    }
-
-    pub fn find_person(&self, email: &str) -> Option<Person> {
-        self.connection
-            .lock()
-            .unwrap()
-            .query_row(
-                "select p.id, p.email, p.name, p.waiting from people p
-                 where p.email = ?1",
-                [email],
-                |row| {
-                    Ok(Person {
-                        id: row.get(0).unwrap(),
-                        email: row.get(1).unwrap(),
-                        name: row.get(2).unwrap(),
-                        waiting: row.get(3).unwrap(),
-                    })
-                },
-            )
-            .ok()
     }
 
     pub fn get_person(&self, id: u32) -> Option<Person> {
@@ -122,15 +124,28 @@ impl Database {
             .ok()
     }
 
-    pub fn add_person(&self, name: &str, email: &str) {
-        self.connection
-            .lock()
-            .unwrap()
-            .execute(
-                "insert into people (email, name, waiting) values (?1, ?2, FALSE)",
+    pub fn sign_up_session(&self, name: &str, email: &str, password_hash: &str) -> (u32, String) {
+        let conn = self.connection.lock().unwrap();
+        let id: u32 = conn
+            .query_row(
+                "insert into people (email, name, waiting) values (?1, ?2, FALSE) RETURNING id",
                 [email, name],
+                |row| row.get(0),
             )
             .unwrap();
+        conn.execute(
+            "INSERT INTO auth (person, password_hash) values (?1, ?2)",
+            params![id, password_hash],
+        )
+        .unwrap();
+        let session_id = uuid::Uuid::new_v4().to_string();
+        let time = chrono::offset::Utc::now().timestamp();
+        conn.execute(
+            "INSERT INTO sessions (id, person, last_seen) VALUES (?1, ?2, ?3)",
+            params![session_id, id, time],
+        )
+        .unwrap();
+        (id, session_id)
     }
 
     pub fn toggle_waiter(&self, person_id: u32) {
@@ -387,5 +402,55 @@ impl Database {
             }
         }
         edges
+    }
+
+    pub fn get_session(&self, session_id: &str, now: i64) -> Option<u32> {
+        let conn = self.connection.lock().unwrap();
+        let (person, last_seen) = conn
+            .query_row(
+                "SELECT person, last_seen FROM sessions WHERE id = ?1",
+                [session_id],
+                |row| Ok((row.get(0).unwrap(), row.get::<_, i64>(1).unwrap())),
+            )
+            .unwrap();
+        let week_seconds = 60 * 60 * 24 * 7;
+        if last_seen - now > week_seconds {
+            conn.execute("DELETE FROM sessions WHERE id = ?1", [session_id])
+                .unwrap();
+            None
+        } else {
+            let time = chrono::offset::Utc::now().timestamp();
+            conn.execute(
+                "UPDATE sessions SET last_seen = ?2 WHERE id = ?1",
+                params![session_id, time],
+            )
+            .unwrap();
+            Some(person)
+        }
+    }
+
+    pub fn sign_in_session(&self, email: &str, password_hash: &str) -> Result<String, SignInError> {
+        let conn = self.connection.lock().unwrap();
+        let expected_password_hash: Result<String, _> = conn.query_row(
+            "SELECT password_hash FROM auth JOIN people ON id = person WHERE email = ?1",
+            [email],
+            |r| r.get(0),
+        );
+        match expected_password_hash {
+            Err(_) => return Err(SignInError::UnknownUser),
+            Ok(expected_password_hash) => {
+                // TODO: properly verify this
+                if password_hash != expected_password_hash {
+                    return Err(SignInError::InvalidPassword);
+                }
+            }
+        }
+        let session_id = uuid::Uuid::new_v4().to_string();
+        let time = chrono::offset::Utc::now().timestamp();
+        conn.execute(
+            "INSERT INTO sessions (id, person, last_seen) VALUES (?1, (SELECT id FROM people WHERE email = ?2), ?3)",
+            params![session_id, email, time],
+        ).unwrap();
+        Ok(session_id)
     }
 }

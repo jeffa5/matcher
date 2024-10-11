@@ -2,4 +2,11 @@
 <nav>
   <a href="/matches">Matches</a>
   <a href="/people">People</a>
+
+  {% if authorized_person_id %}
+  Sign out
+  {% else %}
+  <a href="/sign_in">Sign in</a>
+  <a href="/sign_up">Sign up</a>
+  {% endif %}
 </nav>

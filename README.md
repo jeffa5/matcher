@@ -47,3 +47,11 @@ Matching: generation, person1.id, optional person2.id
 Generations: generation, time
 Edges: person1.id, person2.id, weight
 Waiting: person.id
+
+## Auth
+
+Signing up is just creating a user and providing the token for the instance, then users get a unique token of their own to manage their page.
+
+Conveniently given as a link as well as the token for just signing in.
+
+Once signed in you can view every person and all matchings, (you are trusted), but can only edit your own person page.

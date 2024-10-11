@@ -18,7 +18,6 @@ async fn main() {
 
     let app = axum::Router::new()
         .route("/", axum::routing::get(web::root))
-        .route("/person", get(web::new_person).post(web::find_person))
         .route(
             "/person/:person_id",
             get(web::view_person).post(web::toggle_waiter),
@@ -26,6 +25,9 @@ async fn main() {
         .route("/people", get(web::all_people))
         .route("/matches", get(web::matches))
         .route("/matches/:generation", get(web::matches_generation))
+        .route("/sign_in", get(web::sign_in).post(web::do_sign_in))
+        .route("/sign_up", get(web::sign_up).post(web::do_sign_up))
+        .fallback(web::fallback)
         .with_state(state.clone());
 
     let ops_app = axum::Router::new()
