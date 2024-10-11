@@ -1,8 +1,6 @@
 {% include "head.html" %}
 <body>
-  {% include "header.html" %}
-
-  {% if error %}
+  {% include "header.html" %} {% if error %}
   <div class="error">{{ error }}</div>
   {% endif %}
 
@@ -12,18 +10,18 @@
     <table>
       <tr>
         <td>
-    <label for="email">Email:</label>
+          <label for="email">Email:</label>
         </td>
         <td>
-    <input type="email" id="email" name="email" required />
+          <input type="email" id="email" name="email" required />
         </td>
       </tr>
       <tr>
         <td>
-    <label for="password">Password:</label>
+          <label for="password">Password:</label>
         </td>
         <td>
-    <input type="password" id="password" name="password" required />
+          <input type="password" id="password" name="password" required />
         </td>
       </tr>
     </table>

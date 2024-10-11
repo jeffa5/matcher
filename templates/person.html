@@ -1,8 +1,8 @@
 {% include "head.html" %}
 <body>
-  {% include "header.html" %}
-
-  {% if id == authorized_person_id %}<div class="info">Its you!</div>{% endif %}
+  {% include "header.html" %} {% if id == authorized_person_id %}
+  <div class="info">Its you!</div>
+  {% endif %}
 
   <h2>{{ name }}</h2>
 
