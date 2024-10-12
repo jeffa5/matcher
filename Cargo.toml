@@ -4,6 +4,7 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
+argon2 = "0.5.3"
 async-trait = "0.1.83"
 axum = { version = "0.7.7", features = ["form"] }
 axum-extra = { version = "0.9.4", features = ["cookie"] }

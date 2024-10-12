@@ -3,6 +3,10 @@ use std::{
     sync::{Arc, Mutex},
 };
 
+use argon2::{
+    password_hash::{rand_core::OsRng, PasswordHasher, SaltString},
+    Argon2, PasswordHash, PasswordVerifier,
+};
 use rusqlite::{params, Connection};
 use serde::{Deserialize, Serialize};
 
@@ -124,7 +128,12 @@ impl Database {
             .ok()
     }
 
-    pub fn sign_up_session(&self, name: &str, email: &str, password_hash: &str) -> (u32, String) {
+    pub fn sign_up_session(&self, name: &str, email: &str, password: &str) -> (u32, String) {
+        let salt = SaltString::generate(&mut OsRng);
+        let password_hash = Argon2::default()
+            .hash_password(password.as_bytes(), &salt)
+            .unwrap()
+            .to_string();
         let conn = self.connection.lock().unwrap();
         let id: u32 = conn
             .query_row(
@@ -429,7 +438,7 @@ impl Database {
         }
     }
 
-    pub fn sign_in_session(&self, email: &str, password_hash: &str) -> Result<String, SignInError> {
+    pub fn sign_in_session(&self, email: &str, password: &str) -> Result<String, SignInError> {
         let conn = self.connection.lock().unwrap();
         let expected_password_hash: Result<String, _> = conn.query_row(
             "SELECT password_hash FROM auth JOIN people ON id = person WHERE email = ?1",
@@ -439,8 +448,13 @@ impl Database {
         match expected_password_hash {
             Err(_) => return Err(SignInError::UnknownUser),
             Ok(expected_password_hash) => {
-                // TODO: properly verify this
-                if password_hash != expected_password_hash {
+                if Argon2::default()
+                    .verify_password(
+                        password.as_bytes(),
+                        &PasswordHash::new(&expected_password_hash).unwrap(),
+                    )
+                    .is_err()
+                {
                     return Err(SignInError::InvalidPassword);
                 }
             }
