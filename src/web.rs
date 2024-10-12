@@ -168,8 +168,7 @@ pub async fn view_person(
     authorized: Authorized,
     Path(person_id): Path<u32>,
 ) -> Response {
-    if let Some(user) = state.db.get_person(person_id) {
-        let mut matches = state.db.matches_for(person_id);
+    if let Some((user, mut matches)) = state.db.get_person_and_matches(person_id) {
         matches.sort_by_key(|m| m.0);
         matches.reverse();
         let mut context = Context::new();
@@ -196,10 +195,10 @@ pub async fn all_people(State(state): State<AppState>, authorized: Authorized) -
 pub async fn matches(State(state): State<AppState>, authorized: Authorized) -> Html<String> {
     let mut context = Context::new();
     context.insert("authorized_person_id", &authorized.person_id);
-    let match_meta = state.db.latest_match_meta();
-    let matches = state.db.latest_matches();
-    context.insert("match_meta", &match_meta);
-    context.insert("matches", &matches);
+    if let Some((match_meta, matches)) = state.db.latest_matches() {
+        context.insert("match_meta", &match_meta);
+        context.insert("matches", &matches);
+    }
     Html(state.tera.render("matches.html", &context).unwrap())
 }
 
@@ -210,10 +209,10 @@ pub async fn matches_generation(
 ) -> Html<String> {
     let mut context = Context::new();
     context.insert("authorized_person_id", &authorized.person_id);
-    let match_meta = state.db.match_meta_at(generation);
-    let matches = state.db.matches_at(generation);
-    context.insert("match_meta", &match_meta);
-    context.insert("matches", &matches);
+    if let Some((match_meta, matches)) = state.db.matches_at(generation) {
+        context.insert("match_meta", &match_meta);
+        context.insert("matches", &matches);
+    }
     Html(state.tera.render("matches.html", &context).unwrap())
 }
 

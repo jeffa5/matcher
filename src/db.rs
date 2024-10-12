@@ -96,16 +96,16 @@ impl Database {
     fn migrate(&self) {
         let conn = self.connection.lock().unwrap();
         let creations = [
+            "BEGIN",
             CREATE_TABLE_PEOPLE,
             CREATE_TABLE_GENERATIONS,
             CREATE_TABLE_MATCHES,
             CREATE_TABLE_EDGES,
             CREATE_TABLE_AUTH,
             CREATE_TABLE_SESSIONS,
+            "COMMIT",
         ];
-        for creation in creations {
-            conn.execute(creation, []).unwrap();
-        }
+        conn.execute_batch(&creations.join(";")).unwrap();
     }
 
     pub fn get_person(&self, id: u32) -> Option<Person> {
@@ -126,6 +126,12 @@ impl Database {
                 },
             )
             .ok()
+    }
+
+    pub fn get_person_and_matches(&self, id: u32) -> Option<(Person, Vec<(u32, Person)>)> {
+        let person = self.get_person(id)?;
+        let matches = self.matches_for(id);
+        Some((person, matches))
     }
 
     pub fn sign_up_session(&self, name: &str, email: &str, password: &str) -> (u32, String) {
@@ -257,7 +263,8 @@ impl Database {
             .ok()
     }
 
-    pub fn matches_at(&self, generation: u32) -> Vec<Match> {
+    pub fn matches_at(&self, generation: u32) -> Option<(MatchMeta, Vec<Match>)> {
+        let match_meta = self.match_meta_at(generation)?;
         let conn = self.connection.lock().unwrap();
         let mut stmt = conn
             .prepare("select p1.id, p1.email, p1.name, p1.waiting, p2.id, p2.email, p2.name, p2.waiting from matches m join people p1 on m.person1 = p1.id join people p2 on m.person2 = p2.id where m.generation = ?1")
@@ -295,51 +302,12 @@ impl Database {
                 person2: None,
             })
         }
-        matches
+        Some((match_meta, matches))
     }
 
-    pub fn latest_matches(&self) -> Vec<Match> {
-        let Some(latest_match_meta) = self.latest_match_meta() else {
-            return Vec::new();
-        };
-        let conn = self.connection.lock().unwrap();
-        let mut stmt = conn
-            .prepare("select p1.id, p1.email, p1.name, p1.waiting, p2.id, p2.email, p2.name, p2.waiting from matches m join people p1 on m.person1 = p1.id join people p2 on m.person2 = p2.id where m.generation = ?1")
-            .unwrap();
-        let mut rows = stmt.query([latest_match_meta.generation]).unwrap();
-        let mut matches = Vec::new();
-        while let Some(row) = rows.next().unwrap() {
-            matches.push(Match {
-                person1: Person {
-                    id: row.get(0).unwrap(),
-                    email: row.get(1).unwrap(),
-                    name: row.get(2).unwrap(),
-                    waiting: row.get(3).unwrap(),
-                },
-                person2: Some(Person {
-                    id: row.get(4).unwrap(),
-                    email: row.get(5).unwrap(),
-                    name: row.get(6).unwrap(),
-                    waiting: row.get(7).unwrap(),
-                }),
-            })
-        }
-        let mut stmt = conn
-            .prepare("select p1.id, p1.email, p1.name, p1.waiting from matches m join people p1 on m.person1 = p1.id where m.generation = ?1 AND m.person2 IS NULL")
-            .unwrap();
-        let mut rows = stmt.query([latest_match_meta.generation]).unwrap();
-        while let Some(row) = rows.next().unwrap() {
-            matches.push(Match {
-                person1: Person {
-                    id: row.get(0).unwrap(),
-                    email: row.get(1).unwrap(),
-                    name: row.get(2).unwrap(),
-                    waiting: row.get(3).unwrap(),
-                },
-                person2: None,
-            })
-        }
-        matches
+    pub fn latest_matches(&self) -> Option<(MatchMeta, Vec<Match>)> {
+        let latest_match_meta = self.latest_match_meta()?;
+        self.matches_at(latest_match_meta.generation)
     }
 
     pub fn add_matching(&self, p1id: u32, p2id: Option<u32>, generation: u32) {
